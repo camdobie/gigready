@@ -19,6 +19,7 @@ let currentSetlist = null; // Track the current setlist
 setlistGrid.addEventListener('click', (event) => {
     if (event.target.classList.contains('setlist-item')) {
         currentSetlist = event.target.dataset.setlist; // Set the current setlist
+        console.log("Setlist clicked:", currentSetlist);
         displaySongs(currentSetlist);
     }
 });
@@ -29,7 +30,8 @@ function displaySongs(setlistName) {
     songGrid.innerHTML = '';
     document.querySelector('.song-list h1').textContent = `Songs - ${setlistName}`;
     const songs = JSON.parse(localStorage.getItem('songs')) || {};
-    if (songs[setlistName]) {
+    console.log("Songs from local storage:", songs); // Log songs object
+    if (songs && songs[setlistName]) { // Check if songs and setlist exist
         Object.keys(songs[setlistName]).forEach(song => {
             const songItem = document.createElement('div');
             songItem.classList.add('song-item');
@@ -43,6 +45,7 @@ function displaySongs(setlistName) {
 songGrid.addEventListener('click', (event) => {
     if (event.target.classList.contains('song-item')) {
         const songName = event.target.dataset.song;
+        console.log("Song clicked:", songName);
         displayLyrics(songName);
     }
 });
@@ -52,8 +55,10 @@ function displayLyrics(songName) {
     lyricsDisplay.style.display = 'block';
     lyricsContent.innerHTML = '';
     const songs = JSON.parse(localStorage.getItem('songs')) || {};
-    const lyricsAndChords = songs[currentSetlist][songName]; // Use currentSetlist
-    lyricsContent.textContent = lyricsAndChords;
+    console.log("Lyrics from local storage:", songs[currentSetlist][songName]); // Log lyrics
+    if (songs && songs[currentSetlist] && songs[currentSetlist][songName]) { // Check if data exists
+        lyricsContent.textContent = songs[currentSetlist][songName];
+    }
 }
 
 backButton.addEventListener('click', () => {
@@ -83,11 +88,15 @@ window.addEventListener('click', (event) => {
 
 function saveSong(songName, lyricsAndChords, setlistName) {
     let songs = JSON.parse(localStorage.getItem('songs')) || {};
+    if (!songs) {
+        songs = {};
+    }
     if (!songs[setlistName]) {
         songs[setlistName] = {};
     }
     songs[setlistName][songName] = lyricsAndChords;
     localStorage.setItem('songs', JSON.stringify(songs));
+    console.log("Song saved:", songs); // Log saved songs
     displaySongs(setlistName);
 }
 
