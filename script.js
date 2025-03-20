@@ -38,86 +38,146 @@ const setlistSelect = document.getElementById('setlistSelect');
 let currentSetlist = null;
 let viewAll = false;
 
-setlistGrid.addEventListener('click', (event) => {
-    if (event.target.classList.contains('setlist-item')) {
-        currentSetlist = event.target.dataset.setlist;
-        console.log("Setlist clicked:", currentSetlist);
-        displaySongs(currentSetlist);
+// Login Functionality
+auth.onAuthStateChanged((user) => {
+    if (user) {
+        // User is signed in, see docs for a list of available properties
+        // https://firebase.google.com/docs/reference/js/firebase.User
+        const uid = user.uid;
+        console.log("User is logged in", uid);
+        loadSetlists();
+    } else {
+        // User is signed out
+        console.log("User is logged out");
+        // Implement login UI here
+        login();
     }
 });
 
-function displaySongs(setlistName) {
-    setlistGrid.style.display = 'none';
-    songList.style.display = 'block';
-    songGrid.innerHTML = '';
-    document.querySelector('.song-list h1').textContent = `Songs - ${setlistName}`;
-    const songs = JSON.parse(localStorage.getItem('songs')) || {}; // Will be replaced with Firebase data
-    console.log("Songs from local storage:", songs);
-    if (songs && songs[setlistName]) {
-        Object.keys(songs[setlistName]).forEach(song => {
-            const songItem = document.createElement('div');
-            songItem.classList.add('song-item');
-            songItem.textContent = song;
-            songItem.dataset.song = song;
-            songGrid.appendChild(songItem);
+function login() {
+    auth.signInAnonymously()
+        .then(() => {
+            console.log("User logged in anonymously");
+        })
+        .catch((error) => {
+            console.error("Login Error: ", error);
         });
-    }
 }
 
-songGrid.addEventListener('click', (event) => {
-    if (event.target.classList.contains('song-item')) {
-        const songName = event.target.dataset.song;
-        console.log("Song clicked:", songName);
-        displayLyrics(songName);
+function loadSetlists() {
+    setlistGrid.addEventListener('click', (event) => {
+        if (event.target.classList.contains('setlist-item')) {
+            currentSetlist = event.target.dataset.setlist;
+            console.log("Setlist clicked:", currentSetlist);
+            displaySongs(currentSetlist);
+        }
+    });
+
+    viewAllSongsButton.addEventListener('click', () => {
+        setlistGrid.style.display = 'none';
+        allSongsList.style.display = 'block';
+        displayAllSongs();
+    });
+
+    function displaySongs(setlistName) {
+        setlistGrid.style.display = 'none';
+        songList.style.display = 'block';
+        songGrid.innerHTML = '';
+        document.querySelector('.song-list h1').textContent = `Songs - ${setlistName}`;
+        const user = auth.currentUser;
+        if (user) {
+            const userId = user.uid;
+            const setlistRef = database.ref(`users/<span class="math-inline">\{userId\}/setlists/</span>{setlistName}`);
+            setlistRef.on('value', (snapshot) => {
+                const songs = snapshot.val();
+                if (songs) {
+                    Object.keys(songs).forEach(song => {
+                        const songItem = document.createElement('div');
+                        songItem.classList.add('song-item');
+                        songItem.textContent = song;
+                        songItem.dataset.song = song;
+                        songGrid.appendChild(songItem);
+                    });
+                }
+            });
+        }
     }
-});
 
-function displayLyrics(songName) {
-    songList.style.display = 'none';
-    lyricsDisplay.style.display = 'block';
-    lyricsContent.innerHTML = '';
-    const songs = JSON.parse(localStorage.getItem('songs')) || {}; // Will be replaced with Firebase data
-    console.log("Lyrics from local storage:", songs[currentSetlist][songName]);
-    if (songs && songs[currentSetlist] && songs[currentSetlist][songName]) {
-        lyricsContent.textContent = songs[currentSetlist][songName];
-        deleteSongButton.dataset.song = songName;
+    songGrid.addEventListener('click', (event) => {
+        if (event.target.classList.contains('song-item')) {
+            const songName = event.target.dataset.song;
+            console.log("Song clicked:", songName);
+            displayLyrics(songName);
+        }
+    });
+
+    function displayLyrics(songName) {
+        songList.style.display = 'none';
+        lyricsDisplay.style.display = 'block';
+        lyricsContent.innerHTML = '';
+        const user = auth.currentUser;
+        if (user) {
+            const userId = user.uid;
+            const songRef = database.ref(`users/<span class="math-inline">\{userId\}/setlists/</span>{currentSetlist}/${songName}`);
+            songRef.on('value', (snapshot) => {
+                const lyrics = snapshot.val();
+                if (lyrics) {
+                    lyricsContent.textContent = lyrics;
+                    deleteSongButton.dataset.song = songName;
+                }
+            });
+        }
     }
-}
 
-backButton.addEventListener('click', () => {
-    songList.style.display = 'none';
-    setlistGrid.style.display = 'grid';
-    currentSetlist = null;
-});
+    backButton.addEventListener('click', () => {
+        songList.style.display = 'none';
+        setlistGrid.style.display = 'grid';
+        currentSetlist = null;
+    });
 
-songBackButton.addEventListener('click', () => {
-    lyricsDisplay.style.display = 'none';
-    songList.style.display = 'block';
-});
+    songBackButton.addEventListener('click', () => {
+        lyricsDisplay.style.display = 'none';
+        songList.style.display = 'block';
+    });
 
-addSongButton.addEventListener('click', () => {
-    songModal.style.display = 'block';
-});
+    addSongButton.addEventListener('click', () => {
+        songModal.style.display = 'block';
+    });
 
-closeButton.addEventListener('click', () => {
-    songModal.style.display = 'none';
-});
-
-window.addEventListener('click', (event) => {
-    if (event.target === songModal) {
+    closeButton.addEventListener('click', () => {
         songModal.style.display = 'none';
-    }
-});
+    });
 
-function saveSong(songName, lyricsAndChords, setlistName) {
-    let songs = JSON.parse(localStorage.getItem('songs')) || {}; // Will be replaced with Firebase data
-    if (!songs) {
-        songs = {};
+    window.addEventListener('click', (event) => {
+        if (event.target === songModal) {
+            songModal.style.display = 'none';
+        }
+    });
+
+    function saveSong(songName, lyricsAndChords, setlistName) {
+        const user = auth.currentUser;
+        if (user) {
+            const userId = user.uid;
+            const songRef = database.ref(`users/<span class="math-inline">\{userId\}/setlists/</span>{setlistName}/${songName}`);
+            songRef.set(lyricsAndChords);
+            displaySongs(setlistName);
+        }
     }
-    if (!songs[setlistName]) {
-        songs[setlistName] = {};
-    }
-    songs[setlistName][songName] = lyricsAndChords;
-    localStorage.setItem('songs', JSON.stringify(songs));
-    console.log("Song saved:", songs);
-    displaySongs(set
+
+    saveSongButton.addEventListener('click', () => {
+        const songName = songNameInput.value;
+        const lyricsAndChords = songLyricsInput.value;
+        const setlistName = viewAll ? setlistSelect.value : currentSetlist;
+        saveSong(songName, lyricsAndChords, setlistName);
+        songModal.style.display = 'none';
+        if (viewAll) {
+            displayAllSongs();
+        } else {
+            displaySongs(currentSetlist);
+        }
+        setlistDropdown.style.display = 'none';
+        viewAll = false;
+    });
+
+    deleteSongButton.addEventListener('click', () => {
+        const songName = deleteSongButton.
