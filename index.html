@@ -13,6 +13,7 @@
             <div class="setlist-item" data-setlist="Set 1">Set 1</div>
             <div class="setlist-item" data-setlist="Set 2">Set 2</div>
             <div class="setlist-item" data-setlist="Set 3">Set 3</div>
+            <button id="viewAllSongsButton">View All Songs</button>
         </div>
         <div class="song-list" style="display: none;">
             <h1>Songs</h1>
@@ -20,6 +21,13 @@
             <div class="song-grid">
             </div>
             <button id="backButton">Back</button>
+        </div>
+        <div class="all-songs-list" style="display: none;">
+            <h1>All Songs</h1>
+            <button id="addAllSongButton">Add New Song</button>
+            <div class="all-song-grid">
+            </div>
+            <button id="allSongsBackButton">Back</button>
         </div>
         <div class="lyrics-display" style="display: none;">
             <h1>Lyrics</h1>
@@ -34,6 +42,14 @@
                 <h2>Add New Song</h2>
                 <input type="text" id="songNameInput" placeholder="Song Name">
                 <textarea id="songLyricsInput" placeholder="Lyrics and Chords"></textarea>
+                <div id="setlistDropdown" style="display: none;">
+                    <label for="setlistSelect">Select Setlist:</label>
+                    <select id="setlistSelect">
+                        <option value="Set 1">Set 1</option>
+                        <option value="Set 2">Set 2</option>
+                        <option value="Set 3">Set 3</option>
+                    </select>
+                </div>
                 <button id="saveSongButton">Save Song</button>
             </div>
         </div>
