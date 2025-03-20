@@ -96,3 +96,11 @@ function saveSong(songName, lyricsAndChords, setlistName) {
     localStorage.setItem('songs', JSON.stringify(songs));
     displaySongs(setlistName);
 }
+
+saveSongButton.addEventListener('click', () => {
+    const songName = songNameInput.value;
+    const lyricsAndChords = songLyricsInput.value;
+    const setlistName = document.querySelector('.song-list h1').textContent.replace('Songs', '').trim();
+    saveSong(songName, lyricsAndChords, setlistName);
+    songModal.style.display = 'none';
+});
