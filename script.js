@@ -14,10 +14,12 @@ const saveSongButton = document.getElementById('saveSongButton');
 const songNameInput = document.getElementById('songNameInput');
 const songLyricsInput = document.getElementById('songLyricsInput');
 
+let currentSetlist = null; // Track the current setlist
+
 setlistGrid.addEventListener('click', (event) => {
     if (event.target.classList.contains('setlist-item')) {
-        const setlistName = event.target.dataset.setlist;
-        displaySongs(setlistName);
+        currentSetlist = event.target.dataset.setlist; // Set the current setlist
+        displaySongs(currentSetlist);
     }
 });
 
@@ -49,15 +51,15 @@ function displayLyrics(songName) {
     songList.style.display = 'none';
     lyricsDisplay.style.display = 'block';
     lyricsContent.innerHTML = '';
-    const setlistName = document.querySelector('.song-list h1').textContent.replace('Songs', '').trim();
     const songs = JSON.parse(localStorage.getItem('songs')) || {};
-    const lyricsAndChords = songs[setlistName][songName];
+    const lyricsAndChords = songs[currentSetlist][songName]; // Use currentSetlist
     lyricsContent.textContent = lyricsAndChords;
 }
 
 backButton.addEventListener('click', () => {
     songList.style.display = 'none';
     setlistGrid.style.display = 'grid';
+    currentSetlist = null; // Clear current setlist
 });
 
 songBackButton.addEventListener('click', () => {
@@ -92,7 +94,6 @@ function saveSong(songName, lyricsAndChords, setlistName) {
 saveSongButton.addEventListener('click', () => {
     const songName = songNameInput.value;
     const lyricsAndChords = songLyricsInput.value;
-    const setlistName = document.querySelector('.song-list h1').textContent.replace('Songs', '').trim();
-    saveSong(songName, lyricsAndChords, setlistName);
+    saveSong(songName, lyricsAndChords, currentSetlist); // Use currentSetlist
     songModal.style.display = 'none';
 });
