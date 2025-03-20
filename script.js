@@ -13,13 +13,13 @@ const closeButton = document.querySelector('.close');
 const saveSongButton = document.getElementById('saveSongButton');
 const songNameInput = document.getElementById('songNameInput');
 const songLyricsInput = document.getElementById('songLyricsInput');
-const deleteSongButton = document.getElementById('deleteSongButton'); // Added this line
+const deleteSongButton = document.getElementById('deleteSongButton');
 
-let currentSetlist = null; // Track the current setlist
+let currentSetlist = null;
 
 setlistGrid.addEventListener('click', (event) => {
     if (event.target.classList.contains('setlist-item')) {
-        currentSetlist = event.target.dataset.setlist; // Set the current setlist
+        currentSetlist = event.target.dataset.setlist;
         console.log("Setlist clicked:", currentSetlist);
         displaySongs(currentSetlist);
     }
@@ -31,8 +31,8 @@ function displaySongs(setlistName) {
     songGrid.innerHTML = '';
     document.querySelector('.song-list h1').textContent = `Songs - ${setlistName}`;
     const songs = JSON.parse(localStorage.getItem('songs')) || {};
-    console.log("Songs from local storage:", songs); // Log songs object
-    if (songs && songs[setlistName]) { // Check if songs and setlist exist
+    console.log("Songs from local storage:", songs);
+    if (songs && songs[setlistName]) {
         Object.keys(songs[setlistName]).forEach(song => {
             const songItem = document.createElement('div');
             songItem.classList.add('song-item');
@@ -56,17 +56,17 @@ function displayLyrics(songName) {
     lyricsDisplay.style.display = 'block';
     lyricsContent.innerHTML = '';
     const songs = JSON.parse(localStorage.getItem('songs')) || {};
-    console.log("Lyrics from local storage:", songs[currentSetlist][songName]); // Log lyrics
-    if (songs && songs[currentSetlist] && songs[currentSetlist][songName]) { // Check if data exists
+    console.log("Lyrics from local storage:", songs[currentSetlist][songName]);
+    if (songs && songs[currentSetlist] && songs[currentSetlist][songName]) {
         lyricsContent.textContent = songs[currentSetlist][songName];
-        deleteSongButton.dataset.song = songName; // Store song name for deletion
+        deleteSongButton.dataset.song = songName;
     }
 }
 
 backButton.addEventListener('click', () => {
     songList.style.display = 'none';
     setlistGrid.style.display = 'grid';
-    currentSetlist = null; // Clear current setlist
+    currentSetlist = null;
 });
 
 songBackButton.addEventListener('click', () => {
@@ -98,14 +98,14 @@ function saveSong(songName, lyricsAndChords, setlistName) {
     }
     songs[setlistName][songName] = lyricsAndChords;
     localStorage.setItem('songs', JSON.stringify(songs));
-    console.log("Song saved:", songs); // Log saved songs
+    console.log("Song saved:", songs);
     displaySongs(setlistName);
 }
 
 saveSongButton.addEventListener('click', () => {
     const songName = songNameInput.value;
     const lyricsAndChords = songLyricsInput.value;
-    saveSong(songName, lyricsAndChords, currentSetlist); // Use currentSetlist
+    saveSong(songName, lyricsAndChords, currentSetlist);
     songModal.style.display = 'none';
 });
 
@@ -122,5 +122,6 @@ function deleteSong(songName, setlistName) {
         delete songs[setlistName][songName];
         localStorage.setItem('songs', JSON.stringify(songs));
         console.log("Song deleted:", songName);
+        displaySongs(setlistName);
     }
 }
