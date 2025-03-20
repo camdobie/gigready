@@ -86,3 +86,13 @@ saveSongButton.addEventListener('click', () => {
     saveSong(songName, lyricsAndChords, setlistName);
     songModal.style.display = 'none';
 });
+
+function saveSong(songName, lyricsAndChords, setlistName) {
+    let songs = JSON.parse(localStorage.getItem('songs')) || {};
+    if (!songs[setlistName]) {
+        songs[setlistName] = {};
+    }
+    songs[setlistName][songName] = lyricsAndChords;
+    localStorage.setItem('songs', JSON.stringify(songs));
+    displaySongs(setlistName);
+}
