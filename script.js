@@ -79,14 +79,6 @@ window.addEventListener('click', (event) => {
     }
 });
 
-saveSongButton.addEventListener('click', () => {
-    const songName = songNameInput.value;
-    const lyricsAndChords = songLyricsInput.value;
-    const setlistName = document.querySelector('.song-list h1').textContent.replace('Songs', '').trim();
-    saveSong(songName, lyricsAndChords, setlistName);
-    songModal.style.display = 'none';
-});
-
 function saveSong(songName, lyricsAndChords, setlistName) {
     let songs = JSON.parse(localStorage.getItem('songs')) || {};
     if (!songs[setlistName]) {
