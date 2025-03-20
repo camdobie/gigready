@@ -13,18 +13,28 @@
             <div class="setlist-item" data-setlist="Set 1">Set 1</div>
             <div class="setlist-item" data-setlist="Set 2">Set 2</div>
             <div class="setlist-item" data-setlist="Set 3">Set 3</div>
-            </div>
+        </div>
         <div class="song-list" style="display: none;">
             <h1>Songs</h1>
+            <button id="addSongButton">Add New Song</button>
             <div class="song-grid">
-                </div>
+            </div>
             <button id="backButton">Back</button>
         </div>
         <div class="lyrics-display" style="display: none;">
             <h1>Lyrics</h1>
             <div class="lyrics-content">
-                </div>
+            </div>
             <button id="songBackButton">Back</button>
+        </div>
+        <div id="songModal" class="modal">
+            <div class="modal-content">
+                <span class="close">&times;</span>
+                <h2>Add New Song</h2>
+                <input type="text" id="songNameInput" placeholder="Song Name">
+                <textarea id="songLyricsInput" placeholder="Lyrics and Chords"></textarea>
+                <button id="saveSongButton">Save Song</button>
+            </div>
         </div>
     </div>
     <script src="script.js"></script>
