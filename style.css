@@ -13,7 +13,7 @@ h1 {
     margin: 0 auto;
 }
 
-.setlist-grid, .song-grid {
+.setlist-grid, .song-grid, .all-song-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
     gap: 10px;
@@ -31,11 +31,11 @@ h1 {
     background-color: #e0e0e0;
 }
 
-.song-list, .lyrics-display {
+.song-list, .lyrics-display, .all-songs-list {
     margin-top: 20px;
 }
 
-#backButton, #songBackButton {
+#backButton, #songBackButton, #allSongsBackButton {
     margin-top: 20px;
     padding: 10px 20px;
     cursor: pointer;
@@ -78,4 +78,16 @@ h1 {
 #songLyricsInput {
     width: 100%;
     height: 200px;
+}
+
+#viewAllSongsButton {
+    background-color: #f0f0f0;
+    padding: 20px;
+    text-align: center;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+#viewAllSongsButton:hover {
+    background-color: #e0e0e0;
 }
