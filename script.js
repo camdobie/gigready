@@ -1,58 +1,38 @@
 // ... (previous JavaScript) ...
 
-const addSongButton = document.getElementById('addSongButton');
-const songModal = document.getElementById('songModal');
-const closeButton = document.querySelector('.close');
-const saveSongButton = document.getElementById('saveSongButton');
-const songNameInput = document.getElementById('songNameInput');
-const songLyricsInput = document.getElementById('songLyricsInput');
-
-addSongButton.addEventListener('click', () => {
-    songModal.style.display = 'block';
-});
-
-closeButton.addEventListener('click', () => {
-    songModal.style.display = 'none';
-});
-
-window.addEventListener('click', (event) => {
-    if (event.target === songModal) {
-        songModal.style.display = 'none';
-    }
-});
-
 saveSongButton.addEventListener('click', () => {
     const songName = songNameInput.value;
     const lyricsAndChords = songLyricsInput.value;
-    saveSong(songName, lyricsAndChords);
+    const setlistName = document.querySelector('.song-list h1').textContent.replace('Songs', '').trim(); // Get the current setlist name
+    saveSong(songName, lyricsAndChords, setlistName); // Pass setlistName
     songModal.style.display = 'none';
 });
 
-function saveSong(songName, lyricsAndChords) {
-    const setlistName = document.querySelector('.song-list h1').textContent.replace('Songs', '').trim();
+function saveSong(songName, lyricsAndChords, setlistName) {
     let songs = JSON.parse(localStorage.getItem('songs')) || {};
     if (!songs[setlistName]) {
         songs[setlistName] = {};
     }
     songs[setlistName][songName] = lyricsAndChords;
     localStorage.setItem('songs', JSON.stringify(songs));
-    displaySongs(setlistName);
+    displaySongs(setlistName); // Refresh the song list
 }
 
 function displaySongs(setlistName) {
-    // ... (rest of the displaySongs function) ...
+    setlistGrid.style.display = 'none';
+    songList.style.display = 'block';
+    songGrid.innerHTML = '';
+    document.querySelector('.song-list h1').textContent = `Songs - ${setlistName}`; // Update heading
     const songs = JSON.parse(localStorage.getItem('songs')) || {};
     if (songs[setlistName]) {
         Object.keys(songs[setlistName]).forEach(song => {
-            // ... (rest of the song display logic) ...
+            const songItem = document.createElement('div');
+            songItem.classList.add('song-item');
+            songItem.textContent = song;
+            songItem.dataset.song = song;
+            songGrid.appendChild(songItem);
         });
     }
 }
 
-function displayLyrics(songName) {
-    // ... (rest of the displayLyrics function) ...
-    const setlistName = document.querySelector('.song-list h1').textContent.replace('Songs', '').trim();
-    const songs = JSON.parse(localStorage.getItem('songs')) || {};
-    const lyricsAndChords = songs[setlistName][songName];
-    lyricsContent.textContent = lyricsAndChords;
-}
+// ... (rest of the JavaScript) ...
