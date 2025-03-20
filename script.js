@@ -1,5 +1,18 @@
 console.log("javascript file loaded");
 
+const firebaseConfig = {
+    apiKey: "AIzaSyC6M1WLbJWF5oWOQOnsMH6I-4TpXP4FqmE",
+    authDomain: "gigready-dbeaf.firebaseapp.com",
+    projectId: "gigready-dbeaf",
+    storageBucket: "gigready-dbeaf.firebasestorage.app",
+    messagingSenderId: "398144151156",
+    appId: "1:398144151156:web:e57213673769091630bb21"
+};
+
+const app = firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const database = firebase.database();
+
 const setlistGrid = document.querySelector('.setlist-grid');
 const songList = document.querySelector('.song-list');
 const songGrid = document.querySelector('.song-grid');
@@ -25,64 +38,86 @@ const setlistSelect = document.getElementById('setlistSelect');
 let currentSetlist = null;
 let viewAll = false;
 
-// ... (rest of the code, including displaySongs, displayLyrics, saveSong, deleteSong) ...
-
-viewAllSongsButton.addEventListener('click', () => {
-    setlistGrid.style.display = 'none';
-    allSongsList.style.display = 'block';
-    displayAllSongs();
+setlistGrid.addEventListener('click', (event) => {
+    if (event.target.classList.contains('setlist-item')) {
+        currentSetlist = event.target.dataset.setlist;
+        console.log("Setlist clicked:", currentSetlist);
+        displaySongs(currentSetlist);
+    }
 });
 
-function displayAllSongs() {
-    allSongGrid.innerHTML = '';
-    const songs = JSON.parse(localStorage.getItem('songs')) || {};
-    const allSongs = {};
-    Object.keys(songs).forEach(setlist => {
-        Object.keys(songs[setlist]).forEach(song => {
-            allSongs[song] = setlist;
+function displaySongs(setlistName) {
+    setlistGrid.style.display = 'none';
+    songList.style.display = 'block';
+    songGrid.innerHTML = '';
+    document.querySelector('.song-list h1').textContent = `Songs - ${setlistName}`;
+    const songs = JSON.parse(localStorage.getItem('songs')) || {}; // Will be replaced with Firebase data
+    console.log("Songs from local storage:", songs);
+    if (songs && songs[setlistName]) {
+        Object.keys(songs[setlistName]).forEach(song => {
+            const songItem = document.createElement('div');
+            songItem.classList.add('song-item');
+            songItem.textContent = song;
+            songItem.dataset.song = song;
+            songGrid.appendChild(songItem);
         });
-    });
-    Object.keys(allSongs).forEach(song => {
-        const songItem = document.createElement('div');
-        songItem.classList.add('song-item');
-        songItem.textContent = song;
-        songItem.dataset.song = song;
-        songItem.dataset.setlist = allSongs[song];
-        allSongGrid.appendChild(songItem);
-    });
+    }
 }
 
-allSongGrid.addEventListener('click', (event) => {
+songGrid.addEventListener('click', (event) => {
     if (event.target.classList.contains('song-item')) {
         const songName = event.target.dataset.song;
-        currentSetlist = event.target.dataset.setlist;
+        console.log("Song clicked:", songName);
         displayLyrics(songName);
     }
 });
 
-addAllSongButton.addEventListener('click', () => {
-    viewAll = true;
-    setlistDropdown.style.display = 'block';
+function displayLyrics(songName) {
+    songList.style.display = 'none';
+    lyricsDisplay.style.display = 'block';
+    lyricsContent.innerHTML = '';
+    const songs = JSON.parse(localStorage.getItem('songs')) || {}; // Will be replaced with Firebase data
+    console.log("Lyrics from local storage:", songs[currentSetlist][songName]);
+    if (songs && songs[currentSetlist] && songs[currentSetlist][songName]) {
+        lyricsContent.textContent = songs[currentSetlist][songName];
+        deleteSongButton.dataset.song = songName;
+    }
+}
+
+backButton.addEventListener('click', () => {
+    songList.style.display = 'none';
+    setlistGrid.style.display = 'grid';
+    currentSetlist = null;
+});
+
+songBackButton.addEventListener('click', () => {
+    lyricsDisplay.style.display = 'none';
+    songList.style.display = 'block';
+});
+
+addSongButton.addEventListener('click', () => {
     songModal.style.display = 'block';
 });
 
-allSongsBackButton.addEventListener('click', () => {
-    allSongsList.style.display = 'none';
-    setlistGrid.style.display = 'grid';
-    viewAll = false;
+closeButton.addEventListener('click', () => {
+    songModal.style.display = 'none';
 });
 
-saveSongButton.addEventListener('click', () => {
-    const songName = songNameInput.value;
-    const lyricsAndChords = songLyricsInput.value;
-    const setlistName = viewAll ? setlistSelect.value : currentSetlist;
-    saveSong(songName, lyricsAndChords, setlistName);
-    songModal.style.display = 'none';
-    if (viewAll) {
-        displayAllSongs();
-    } else {
-        displaySongs(currentSetlist);
+window.addEventListener('click', (event) => {
+    if (event.target === songModal) {
+        songModal.style.display = 'none';
     }
-    setlistDropdown.style.display = 'none';
-    viewAll = false;
 });
+
+function saveSong(songName, lyricsAndChords, setlistName) {
+    let songs = JSON.parse(localStorage.getItem('songs')) || {}; // Will be replaced with Firebase data
+    if (!songs) {
+        songs = {};
+    }
+    if (!songs[setlistName]) {
+        songs[setlistName] = {};
+    }
+    songs[setlistName][songName] = lyricsAndChords;
+    localStorage.setItem('songs', JSON.stringify(songs));
+    console.log("Song saved:", songs);
+    displaySongs(set
