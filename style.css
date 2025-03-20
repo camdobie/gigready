@@ -1,0 +1,42 @@
+body {
+    font-family: sans-serif;
+    margin: 0;
+    padding: 20px;
+}
+
+.h1 {
+    text-align: center;
+}
+
+.container {
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.setlist-grid, .song-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 10px;
+}
+
+.setlist-item, .song-item {
+    background-color: #f0f0f0;
+    padding: 20px;
+    text-align: center;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.setlist-item:hover, .song-item:hover {
+    background-color: #e0e0e0;
+}
+
+.song-list, .lyrics-display {
+    margin-top: 20px;
+}
+
+#backButton, #songBackButton {
+    margin-top: 20px;
+    padding: 10px 20px;
+    cursor: pointer;
+}
