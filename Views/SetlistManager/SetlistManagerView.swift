@@ -200,7 +200,7 @@ struct SetColumnView: View {
                 VStack(spacing: 8) {
                     ForEach(viewModel.getSortedSongIds(for: setIndex), id: \.self) { songId in
                         if let song = songs[songId] {
-                            NavigationLink(destination: SongDetailView(song: song, userId: userId)) {
+                            NavigationLink(destination: SongDisplayView(song: song, userId: userId)) {
                                 SongCellView(song: song, onDelete: {
                                     viewModel.removeSongFromSet(songId, setIndex: setIndex)
                                 })
