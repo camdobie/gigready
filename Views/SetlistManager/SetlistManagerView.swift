@@ -7,16 +7,18 @@ struct SetlistManagerView: View {
     @State private var setlist: Setlist?
     @State private var songs: [String: Song] = [:]
     @State private var isLoading = true
-    @State private var showAddSong = false
+    @State private var showImport = false
+    @Environment(\.dismiss) var dismiss
 
     var body: some View {
         ZStack {
             if isLoading {
                 ProgressView()
             } else if let setlist = setlist, let viewModel = viewModel {
-                VStack {
+                VStack(spacing: 0) {
+                    // Header
                     HStack {
-                        Button(action: { /* Navigate back */ }) {
+                        Button(action: { dismiss() }) {
                             HStack {
                                 Image(systemName: "chevron.left")
                                 Text("Back")
@@ -26,17 +28,44 @@ struct SetlistManagerView: View {
 
                         Spacer()
 
+                        Text(setlist.name)
+                            .font(.headline)
+
+                        Spacer()
+
                         Menu {
-                            ForEach(SortOption.allCases, id: \.self) { option in
-                                Button(option.rawValue) {
-                                    viewModel.sortOption = option
+                            Section("View") {
+                                ForEach(SortOption.allCases, id: \.self) { option in
+                                    Button {
+                                        withAnimation {
+                                            viewModel.sortOption = option
+                                        }
+                                    } label: {
+                                        HStack {
+                                            Text(option.rawValue)
+                                            if viewModel.sortOption == option {
+                                                Image(systemName: "checkmark")
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+
+                            Section("Actions") {
+                                Button(action: { showImport = true }) {
+                                    Label("Import Songs", systemImage: "arrow.down.doc")
+                                }
+
+                                Button(action: { viewModel.createNewSet() }) {
+                                    Label("Add Set", systemImage: "plus")
                                 }
                             }
                         } label: {
-                            Image(systemName: "arrow.up.arrow.down")
+                            Image(systemName: "ellipsis.circle")
                         }
                     }
                     .padding()
+                    .background(Color(.systemGray6))
 
                     ScrollView(.horizontal, showsIndicators: false) {
                         HStack(spacing: 12) {
@@ -48,25 +77,29 @@ struct SetlistManagerView: View {
                                     setIndex: index,
                                     userId: userId
                                 )
-                                .frame(maxWidth: 300)
+                                .frame(minWidth: 280, maxWidth: 320)
                             }
 
-                            Button(action: {
-                                viewModel.createNewSet()
-                            }) {
-                                VStack(spacing: 8) {
-                                    Image(systemName: "plus.circle.fill")
-                                        .font(.system(size: 32))
-                                        .foregroundColor(.blue)
+                            VStack(spacing: 12) {
+                                Button(action: { viewModel.createNewSet() }) {
+                                    VStack(spacing: 8) {
+                                        Image(systemName: "plus.circle.fill")
+                                            .font(.system(size: 32))
+                                            .foregroundColor(.blue)
 
-                                    Text("Add Set")
-                                        .font(.caption)
+                                        Text("Add Set")
+                                            .font(.caption)
+                                            .foregroundColor(.blue)
+                                    }
+                                    .frame(maxWidth: .infinity)
+                                    .frame(minHeight: 100)
+                                    .background(Color(.systemGray6))
+                                    .cornerRadius(8)
                                 }
-                                .frame(maxWidth: 300)
-                                .frame(minHeight: 100)
-                                .background(Color(.systemGray6))
-                                .cornerRadius(8)
+
+                                Spacer()
                             }
+                            .frame(minWidth: 280, maxWidth: 320)
                         }
                         .padding()
                     }
@@ -80,30 +113,31 @@ struct SetlistManagerView: View {
 
                             Spacer()
 
-                            Button(action: { showAddSong = true }) {
-                                Image(systemName: "plus.circle")
-                            }
+                            Text("(\(viewModel.getExtraSongsAlphabetical().count))")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
                         }
                         .padding(.horizontal)
 
                         ExtraSongsDropdownView(
-                            songs: viewModel.getExtraSongsAlphabetical().compactMap { songs[$0] },
-                            onAddToSet: { songId, setIndex in
-                                viewModel.addSongToSet(songId, setIndex: setIndex)
-                            }
+                            extraSongIds: viewModel.getExtraSongsAlphabetical(),
+                            songs: songs,
+                            viewModel: viewModel
                         )
                         .padding(.horizontal)
                     }
+                    .padding(.vertical, 8)
 
                     Spacer()
                 }
             }
         }
+        .navigationBarHidden(true)
         .onAppear {
             loadSetlist()
         }
-        .sheet(isPresented: $showAddSong) {
-            Text("Add Song Sheet")
+        .sheet(isPresented: $showImport) {
+            ImportView(userId: userId)
         }
     }
 
@@ -130,149 +164,300 @@ struct SetColumnView: View {
     let setIndex: Int
     let userId: String
     @State private var draggedSongId: String?
+    @State private var isDropTarget = false
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: 0) {
             HStack {
                 Text(set.name)
                     .font(.headline)
 
                 Spacer()
 
-                Button(action: {
-                    viewModel.deleteSet(setIndex)
-                }) {
-                    Image(systemName: "xmark.circle.fill")
-                        .foregroundColor(.red)
+                Text("\(viewModel.getSortedSongIds(for: setIndex).count)")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
+                    .background(Color.blue.opacity(0.1))
+                    .cornerRadius(4)
+
+                Menu {
+                    Button(role: .destructive) {
+                        viewModel.deleteSet(setIndex)
+                    } label: {
+                        Label("Delete Set", systemImage: "trash")
+                    }
+                } label: {
+                    Image(systemName: "ellipsis")
+                        .foregroundColor(.secondary)
                 }
             }
+            .padding(12)
+            .background(Color(.systemGray6))
 
-            VStack(spacing: 8) {
-                ForEach(viewModel.getSortedSongIds(for: setIndex), id: \.self) { songId in
-                    if let song = songs[songId] {
-                        NavigationLink(destination: SongDetailView(song: song, userId: userId)) {
-                            SongCellView(song: song)
+            ScrollView(.vertical, showsIndicators: true) {
+                VStack(spacing: 8) {
+                    ForEach(viewModel.getSortedSongIds(for: setIndex), id: \.self) { songId in
+                        if let song = songs[songId] {
+                            NavigationLink(destination: SongDetailView(song: song, userId: userId)) {
+                                SongCellView(song: song, onDelete: {
+                                    viewModel.removeSongFromSet(songId, setIndex: setIndex)
+                                })
+                            }
+                            .draggable(songId)
                         }
-                        .draggable(songId)
                     }
-                }
 
-                Color.clear
-                    .frame(height: 40)
-                    .onDrop(of: [.text], isTargeted: nil) { providers in
-                        if let provider = providers.first {
-                            let _ = provider.loadObject(ofClass: String.self) { draggedId, _ in
-                                if let draggedId = draggedId {
-                                    DispatchQueue.main.async {
-                                        if viewModel.setlist.extraSongs.contains(draggedId) {
-                                            viewModel.addSongToSet(draggedId, setIndex: setIndex)
-                                            viewModel.removeSongFromExtraSongs(draggedId)
+                    VStack {
+                        HStack {
+                            Image(systemName: "arrow.down")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+
+                            Text("Drop here to add")
+                                .font(.caption2)
+                                .foregroundColor(.secondary)
+                        }
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 40)
+                        .background(
+                            isDropTarget
+                                ? Color.blue.opacity(0.2)
+                                : Color(.systemGray5)
+                        )
+                        .cornerRadius(6)
+                        .onDrop(of: [.text], isTargeted: $isDropTarget) { providers in
+                            if let provider = providers.first {
+                                let _ = provider.loadObject(ofClass: String.self) { draggedId, _ in
+                                    if let draggedId = draggedId {
+                                        DispatchQueue.main.async {
+                                            if viewModel.setlist.extraSongs.contains(draggedId) {
+                                                viewModel.addSongToSet(draggedId, setIndex: setIndex)
+                                                viewModel.removeSongFromExtraSongs(draggedId)
+                                            }
                                         }
                                     }
                                 }
                             }
+                            return true
                         }
-                        return true
                     }
+                }
+                .padding(8)
             }
-            .padding(8)
-            .background(Color(.systemGray6))
-            .cornerRadius(8)
+            .frame(maxHeight: .infinity)
         }
-        .padding(8)
         .background(Color.white)
         .cornerRadius(8)
-        .border(Color.gray.opacity(0.2))
+        .shadow(color: Color.black.opacity(0.1), radius: 2, x: 0, y: 1)
     }
 }
 
 struct SongCellView: View {
     let song: Song
+    let onDelete: () -> Void
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Text(song.name)
-                .font(.headline)
-                .lineLimit(1)
+        HStack(alignment: .top, spacing: 8) {
+            VStack(alignment: .leading, spacing: 4) {
+                Text(song.name)
+                    .font(.headline)
+                    .lineLimit(1)
 
-            if let tempo = song.tempo {
-                HStack(spacing: 4) {
-                    Image(systemName: "metronome")
-                        .font(.caption)
-                    Text("\(tempo) BPM")
-                        .font(.caption)
+                HStack(spacing: 12) {
+                    if let tempo = song.tempo {
+                        HStack(spacing: 3) {
+                            Image(systemName: "metronome")
+                                .font(.caption)
+                            Text("\(tempo)")
+                                .font(.caption2)
+                        }
                         .foregroundColor(.secondary)
+                    }
+
+                    if song.capRequired {
+                        HStack(spacing: 3) {
+                            Image(systemName: "capoeira")
+                                .font(.caption)
+                            Text("Cap")
+                                .font(.caption2)
+                        }
+                        .foregroundColor(.orange)
+                    }
+
+                    Spacer()
                 }
             }
 
-            if song.capRequired {
-                HStack(spacing: 4) {
-                    Image(systemName: "capoeira")
-                        .font(.caption)
-                    Text("Cap Required")
-                        .font(.caption)
-                        .foregroundColor(.blue)
+            Menu {
+                Button(role: .destructive) {
+                    onDelete()
+                } label: {
+                    Label("Remove", systemImage: "trash")
                 }
+            } label: {
+                Image(systemName: "ellipsis")
+                    .foregroundColor(.secondary)
+                    .font(.caption)
             }
         }
-        .padding(8)
-        .background(Color.blue.opacity(0.1))
+        .padding(10)
+        .background(Color.blue.opacity(0.08))
         .cornerRadius(6)
     }
 }
 
 struct ExtraSongsDropdownView: View {
-    let songs: [Song]
-    let onAddToSet: (String, Int) -> Void
+    let extraSongIds: [String]
+    let songs: [String: Song]
+    let viewModel: SetlistViewModel
     @State private var isExpanded = false
+    @State private var searchText = ""
+
+    var filteredSongs: [String] {
+        let filtered = extraSongIds.filter { songId in
+            if searchText.isEmpty {
+                return true
+            }
+            return songs[songId]?.name.localizedCaseInsensitiveContains(searchText) ?? false
+        }
+        return filtered
+    }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack {
-                Text("Extra Songs (\(songs.count))")
-                    .font(.subheadline)
-                    .fontWeight(.semibold)
+        VStack(alignment: .leading, spacing: 0) {
+            Button(action: { withAnimation { isExpanded.toggle() } }) {
+                HStack(spacing: 12) {
+                    Image(systemName: "music.note.list")
+                        .font(.headline)
+                        .foregroundColor(.blue)
 
-                Spacer()
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Extra Songs")
+                            .font(.subheadline)
+                            .fontWeight(.semibold)
+                            .foregroundColor(.primary)
 
-                Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
-                    .rotationEffect(.degrees(isExpanded ? 0 : -90))
-            }
-            .onTapGesture {
-                withAnimation {
-                    isExpanded.toggle()
+                        Text("\(extraSongIds.count) available")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
+
+                    Spacer()
+
+                    Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
+                        .foregroundColor(.secondary)
+                        .font(.caption)
                 }
+                .padding(12)
+                .background(Color(.systemGray6))
             }
 
             if isExpanded {
-                VStack(spacing: 8) {
-                    ForEach(songs) { song in
-                        HStack {
-                            Text(song.name)
-                                .lineLimit(1)
+                Divider()
 
-                            Spacer()
+                VStack(spacing: 0) {
+                    // Search bar
+                    HStack {
+                        Image(systemName: "magnifyingglass")
+                            .foregroundColor(.gray)
+                            .font(.caption)
 
-                            Menu {
-                                ForEach(0..<4, id: \.self) { setIndex in
-                                    Button("Add to Set \(setIndex + 1)") {
-                                        onAddToSet(song.id, setIndex)
+                        TextField("Search songs...", text: $searchText)
+                            .font(.caption)
+                    }
+                    .padding(8)
+                    .background(Color(.systemGray5))
+                    .cornerRadius(6)
+                    .padding(12)
+
+                    // Songs list
+                    if filteredSongs.isEmpty {
+                        VStack(spacing: 8) {
+                            Image(systemName: "music.note")
+                                .font(.system(size: 20))
+                                .foregroundColor(.secondary)
+
+                            Text(searchText.isEmpty ? "No extra songs" : "No matches")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding(20)
+                    } else {
+                        ScrollView(.vertical, showsIndicators: true) {
+                            VStack(spacing: 6) {
+                                ForEach(filteredSongs, id: \.self) { songId in
+                                    if let song = songs[songId] {
+                                        ExtraSongCell(
+                                            song: song,
+                                            viewModel: viewModel,
+                                            songId: songId
+                                        )
+                                        .draggable(songId)
                                     }
                                 }
-                            } label: {
-                                Image(systemName: "plus.circle")
                             }
+                            .padding(12)
                         }
-                        .padding(8)
-                        .background(Color(.systemGray6))
-                        .cornerRadius(6)
+                        .frame(maxHeight: 250)
                     }
                 }
             }
         }
-        .padding(8)
-        .background(Color(.systemGray5))
+        .background(Color.white)
         .cornerRadius(8)
+        .shadow(color: Color.black.opacity(0.1), radius: 2, x: 0, y: 1)
+    }
+}
+
+struct ExtraSongCell: View {
+    let song: Song
+    let viewModel: SetlistViewModel
+    let songId: String
+    @State private var selectedSet: Int?
+
+    var body: some View {
+        HStack(spacing: 8) {
+            VStack(alignment: .leading, spacing: 3) {
+                Text(song.name)
+                    .font(.caption)
+                    .fontWeight(.semibold)
+                    .lineLimit(1)
+
+                HStack(spacing: 8) {
+                    if let tempo = song.tempo {
+                        Label("\(tempo)", systemImage: "metronome")
+                            .font(.caption2)
+                            .foregroundColor(.secondary)
+                    }
+
+                    if song.capRequired {
+                        Label("Cap", systemImage: "capoeira")
+                            .font(.caption2)
+                            .foregroundColor(.orange)
+                    }
+                }
+            }
+
+            Spacer()
+
+            Menu {
+                Button(role: .destructive) {
+                    viewModel.removeSongFromExtraSongs(songId)
+                } label: {
+                    Label("Remove", systemImage: "trash")
+                }
+            } label: {
+                Image(systemName: "ellipsis")
+                    .foregroundColor(.secondary)
+                    .font(.caption)
+            }
+        }
+        .padding(8)
+        .background(Color.blue.opacity(0.06))
+        .cornerRadius(6)
     }
 }
 
